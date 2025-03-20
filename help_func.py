@@ -4,21 +4,26 @@ import os
 
 from loss_func import custom_loss
 
-def get_model_path(i):
-    path1 = f"/home/trarity/master/koopman_operator/data/Autoencoder_model_params{i}.pth"
-    path2 = f"C:/Users/jokin/Desktop/Uni/Aalborg/Master/Masters_Thesis/Path/Autoencoder_model_params{i}.pth"
-    path3 = f"/content/drive/My Drive/Colab Notebooks/Autoencoder_model_params{i}.pth"
-    path4 = f"/content/drive/MyDrive/Colab Notebooks/Autoencoder_model_params{i}.pth"
-    path5 = f"/home/trarity/koopman_operator/data/Autoencoder_model_params{i}.pth"
+def get_model_path(i, user_dir=None):
+    path5 = f"/home/trarity/master/koopman_operator/data/"
+    path2 = f"C:/Users/jokin/Desktop/Uni/Aalborg/Master/Masters_Thesis/Path/"
+    path3 = f"/content/drive/My Drive/Colab Notebooks/"
+    path4 = f"/content/drive/MyDrive/Colab Notebooks/"
+    path1 = f"{user_dir}/"
     if os.path.exists(path1):
+        path1 = f"{path1}Autoencoder_model_params{i}.pth"
         return path1
     elif os.path.exists(path2):
+        path2 = f"{path2}Autoencoder_model_params{i}.pth"
         return path2
     elif os.path.exists(path3):
+        path3 = f"{path3}Autoencoder_model_params{i}.pth"
         return path3
     elif os.path.exists(path5):
+        path5 = f"{path5}Autoencoder_model_params{i}.pth"
         return path5
     else:
+        path4 = f"{path4}Autoencoder_model_params{i}.pth"
         return path4
 
 def set_requires_grad(layers, requires_grad):
