@@ -76,8 +76,8 @@ param_ranges = {
 # ------------------------------
 
 # ---- Define last training param -------
-eps_final = 5000       # Number of epochs for final training
-check_epoch = 10
+eps_final = 5       # Number of epochs for final training
+check_epoch = 2
 lr = 1e-3       # Learning rate
 batch_size = 256
 S_p = 30
