@@ -92,7 +92,7 @@ def mutate(candidate, param_ranges, mutation_rate=0.1):
     return candidate
 
 
-def run_genetic_algorithm(check_epoch, Num_meas, Num_inputs, train_tensor, test_tensor, tournament_size, mutation_rate, generations=5, pop_size=10, eps=50, lr=1e-3, batch_size=256, S_p=30, M=1, param_ranges=None, elitism_count=1):
+def run_genetic_algorithm(check_epoch, Num_meas, Num_inputs, train_tensor, test_tensor, tournament_size, mutation_rate, generations=5, pop_size=10, eps=50, lr=1e-3, batch_size=256, S_p=30, T = 50, dt = 0.02, M=1, param_ranges=None, elitism_count=1):
     """
     Runs the genetic algorithm over a number of generations and returns the best candidate.
 
