@@ -117,7 +117,7 @@ print(f"Validation tensor shape: {val_tensor.shape}")
 # --- Genetic Algorithm Hyperparameter Optimization ---
 if use_ga:
     # For speed, use a lower number of epochs for evaluation (eps) and fewer generations/population size.
-    best_params = run_genetic_algorithm(check_epoch, Num_meas, Num_inputs, train_tensor, test_tensor, tournament_size, mutation_rate, generations, pop_size, eps, param_ranges=param_ranges, elitism_count=1)
+    best_params = run_genetic_algorithm(check_epoch, Num_meas, Num_inputs, train_tensor, test_tensor, tournament_size, mutation_rate, generations, pop_size, eps, lr, batch_size, S_p, T, dt, param_ranges=param_ranges, elitism_count=1)
 
     Num_meas      = best_params['Num_meas']
     Num_inputs    = best_params['Num_inputs']
