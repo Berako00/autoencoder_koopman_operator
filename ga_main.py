@@ -22,9 +22,6 @@ print("Using device:", device)
 
 start_time = time.time()
 
-# ---- System Params ----------
-Num_meas = 4
-Num_inputs = 2
 system = 'two_link'     # 'two_link' or 'simple'
 # ----------------------------
 
@@ -34,49 +31,74 @@ T_step = 50
 dt = 0.02
 seed = 1
 
+# ---- GA Params -------------
+use_ga = False
+generations = 6
+pop_size = 10
+eps = 500
+tournament_size = 3
+mutation_rate = 0.2
+
+# Define parameter ranges For GA
+param_ranges = {
+    "Num_x_Obsv": (2, 20),
+    "Num_u_Obsv": (2, 20),
+    "Num_x_Neurons": (128, 128),
+    "Num_u_Neurons": (128, 128),
+    "Num_hidden_x": (3, 3),  # Shared for both x encoder and decoder
+    "Num_hidden_u": (3, 3),  # Shared for both u encoder and decoder
+    "alpha0": (0.001, 0.1),
+    "alpha1": (1e-9, 1e-5),
+    "alpha2": (1e-18, 1e-12)
+}
+# ------------------------------
+
 if system == 'simple':
   x1range = (-0.5, 0.5)
   x2range = x1range
   mu = -0.05
   lam = -1
+
+  Num_meas = 2
+  Num_inputs = 1
+
+  [train_tensor, test_tensor, val_tensor] = DataGenerator(x1range, x2range, numICs, mu, lam, T_step, dt)
+
+  if not use_ga:
+      Num_x_Obsv    = 9
+      Num_u_Obsv    = 4
+      Num_x_Neurons = 128
+      Num_u_Neurons = 128
+      Num_hidden_x  = 3
+      Num_hidden_u  = 3
+      alpha         = [0.001, 1e-5, 1e-17]
+
+  
 elif system == 'two_link':
   q1_range = (-math.pi, math.pi)
   q2_range = (-math.pi, math.pi)
   dq1_range = (-6, 6)
   dq2_range = dq1_range
   tau_max = 7.5
-# -----------------------------------------
 
-if system == 'simple':
-  [train_tensor, test_tensor, val_tensor] = DataGenerator(x1range, x2range, numICs, mu, lam, T_step, dt)
+  Num_meas = 4
+  Num_inputs = 2
 
-elif system == 'two_link':
   [train_tensor, test_tensor, val_tensor] = TwoLinkRobotDataGenerator(q1_range, q2_range, dq1_range, dq2_range, numICs, T_step, dt, tau_max)
 
-# ---- GA Params -------------
-use_ga = False
-generations = 35
-pop_size = 10
-eps = 300
-tournament_size = 3
-mutation_rate = 0.2
+  if not use_ga:
+        Num_x_Obsv    = 17
+        Num_u_Obsv    = 18
+        Num_x_Neurons = 128
+        Num_u_Neurons = 128
+        Num_hidden_x  = 3
+        Num_hidden_u  = 3
+        alpha         = [0.001, 1e-5, 1e-14]
 
-# Define parameter ranges For GA
-param_ranges = {
-    "Num_x_Obsv": (4, 20),
-    "Num_u_Obsv": (2, 20),
-    "Num_x_Neurons": (10, 50),
-    "Num_u_Neurons": (10, 50),
-    "Num_hidden_x": (1, 3),  # Shared for both x encoder and decoder
-    "Num_hidden_u": (1, 3),  # Shared for both u encoder and decoder
-    "alpha0": (0.01, 1.0),
-    "alpha1": (1e-9, 1e-5),
-    "alpha2": (1e-18, 1e-12)
-}
-# ------------------------------
 
 # ---- Define last training param -------
-eps_final = 5       # Number of epochs for final training
+eps_final = 6      # Number of epochs for final training
+breakout = 10
 check_epoch = 2
 lr = 1e-3       # Learning rate
 batch_size = 256
@@ -84,17 +106,7 @@ S_p = 30
 T = len(train_tensor[0, :, :])
 W = 0
 M = 1  # Amount of models you want to run
-
-if not use_ga:
-    Num_x_Obsv    = 17
-    Num_u_Obsv    = 18
-    Num_x_Neurons = 128
-    Num_u_Neurons = 128
-    Num_hidden_x  = 3
-    Num_hidden_u  = 3
-    alpha         = [0.001, 1e-5, 1e-12]
 # ---------------------------------------
-
 
 print(f"Train tensor shape: {train_tensor.shape}")
 print(f"Test tensor shape: {test_tensor.shape}")
