@@ -42,7 +42,7 @@ if system == 'simple':
 elif system == 'two_link':
   q1_range = (-math.pi, math.pi)
   q2_range = (-math.pi, math.pi)
-  dq1_range = (-1, 1)
+  dq1_range = (-6, 6)
   dq2_range = dq1_range
   tau_max = 7.5
 # -----------------------------------------
