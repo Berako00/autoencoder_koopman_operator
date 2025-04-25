@@ -29,7 +29,7 @@ system = 'two_link'     # 'two_link' or 'simple'
 # ----------------------------
 
 # ------- Data Generation Params ----------
-numICs = 20000
+numICs = 30000
 T_step = 50
 dt = 0.02
 seed = 1
@@ -86,13 +86,13 @@ W = 0
 M = 1  # Amount of models you want to run
 
 if not use_ga:
-    Num_x_Obsv    = 29
-    Num_u_Obsv    = 48
+    Num_x_Obsv    = 17
+    Num_u_Obsv    = 18
     Num_x_Neurons = 128
     Num_u_Neurons = 128
     Num_hidden_x  = 3
     Num_hidden_u  = 3
-    alpha         = [0.001, 1e-5, 1e-14]
+    alpha         = [0.001, 1e-5, 1e-12]
 # ---------------------------------------
 
 
