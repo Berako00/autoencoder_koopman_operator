@@ -3,14 +3,14 @@ import copy
 import torch
 from training import trainingfcn, trainingfcn_mixed
 
-def evaluate_candidate(check_epoch, candidate, train_tensor, test_tensor, eps, lr, batch_size, S_p, T, M):
+def evaluate_candidate(check_epoch, candidate, train_tensor, test_tensor, eps, lr, batch_size, S_p, T, dt, M):
     """
     Evaluates a candidate by running a shortened training using fewer epochs
     and returns the test loss.
     """
     alpha = [candidate['alpha0'], candidate['alpha1'], candidate['alpha2']]
     try:
-        results = trainingfcn(eps, check_epoch, lr, batch_size, S_p, T, alpha, candidate['Num_meas'], candidate['Num_inputs'], candidate['Num_x_Obsv'], candidate['Num_x_Neurons'], candidate['Num_u_Obsv'], candidate['Num_u_Neurons'],
+        results = trainingfcn(eps, check_epoch, lr, batch_size, S_p, T, dt, alpha, candidate['Num_meas'], candidate['Num_inputs'], candidate['Num_x_Obsv'], candidate['Num_x_Neurons'], candidate['Num_u_Obsv'], candidate['Num_u_Neurons'],
                                 candidate['Num_hidden_x'], candidate['Num_hidden_x'], candidate['Num_hidden_u'], candidate['Num_hidden_u'], train_tensor, test_tensor, M)
 
         # Use only the lowest_loss (first element) for fitness evaluation
@@ -132,7 +132,7 @@ def run_genetic_algorithm(check_epoch, Num_meas, Num_inputs, train_tensor, test_
                 print(f"Candidate (best from previous generation): {candidate} | Loss: {loss} (evaluation skipped)")
 
             else:
-              loss = evaluate_candidate(check_epoch, candidate, train_tensor, test_tensor, eps, lr, batch_size, S_p, T, M)
+              loss = evaluate_candidate(check_epoch, candidate, train_tensor, test_tensor, eps, lr, batch_size, S_p, T, dt, M)
               fitness = -loss  # Lower loss => higher fitness
               print(f"Candidate: {candidate} | Loss: {loss}")
 
