@@ -186,9 +186,21 @@ def generate_two_link_lab_data(q1_range, q2_range, dq1_range, dq2_range, numICs,
     dq1 = (dq1_range[1] - dq1_range[0]) * torch.rand(numICs) + dq1_range[0]
     dq2 = (dq2_range[1] - dq2_range[0]) * torch.rand(numICs) + dq2_range[0]
 
-    # Generate random control torques for each time step
+    # --- NEW PART: choose 20% of trajectories to be “all-zero” ---
+    n_zero = int(0.3 * numICs)                 # how many to zero out
+    perm   = torch.randperm(numICs)            # random shuffle of [0..numICs-1]
+    zero_idx = perm[:n_zero]                   # pick first n_zero of them
+    traj_zero_mask = torch.zeros(numICs, dtype=torch.bool)
+    traj_zero_mask[zero_idx] = True            # mark those trajectories
+
+    # Generate all torques randomly…
     tau = (torch.rand(numICs, T, 2) - 0.5) * 2 * tau_max
 
+    # …but then zero out *entire* trajectories:
+    # for each i where traj_zero_mask[i] is True, set tau[i, :, :] = 0
+    tau[traj_zero_mask, :, :] = 0
+    # -----------------------------------------------------------------
+                              
     # Preallocate data tensor
     data = torch.zeros(numICs, T, 6, dtype=torch.float32)
     data[:, :, 4:] = tau
