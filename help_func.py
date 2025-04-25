@@ -98,3 +98,37 @@ def enc_self_feeding_uf(model, xuk, Num_meas):
     loss = custom_loss(predictions, xuk[:, :, :Num_meas])
 
     return predictions, loss
+
+def load_model(model, path, device = None):
+      checkpoint = torch.load(path, map_location=device)
+      if 'state_dict' in checkpoint:
+          state_dict = checkpoint['state_dict']
+      else:
+          state_dict = checkpoint
+      model.load_state_dict(state_dict)
+      model.eval()
+
+def load_parameters(path, device = None):
+      checkpoint = torch.load(path, map_location=device)
+      Num_meas = checkpoint['Num_meas']
+      Num_inputs = checkpoint['Num_inputs']
+      Num_x_Obsv = checkpoint['Num_x_Obsv']
+      Num_u_Obsv = checkpoint['Num_u_Obsv']
+      Num_x_Neurons = checkpoint['Num_x_Neurons']
+      Num_u_Neurons = checkpoint['Num_u_Neurons']
+      Num_hidden_x_encoder = checkpoint['Num_hidden_x_encoder']
+      Num_hidden_u_encoder = checkpoint['Num_hidden_u_encoder']
+      Num_hidden_u_decoder = checkpoint['Num_hidden_u_encoder']
+
+      model = AUTOENCODER(Num_meas,Num_inputs,Num_x_Obsv,Num_x_Neurons,
+                          Num_u_Obsv,Num_u_Neurons,Num_hidden_x_encoder,
+                          Num_hidden_u_encoder,  Num_hidden_u_decoder)
+
+      if 'state_dict' in checkpoint:
+          state_dict = checkpoint['state_dict']
+      else:
+          state_dict = checkpoint
+      model.load_state_dict(state_dict)
+      model.eval()
+
+      return model, checkpoint
