@@ -8,7 +8,7 @@ import random as r
 import time
 import math
 
-from help_func import self_feeding, enc_self_feeding
+from help_func import self_feeding, enc_self_feeding, load_model
 from nn_structure import AUTOENCODER
 from training import trainingfcn
 from data_generation import DataGenerator, TwoLinkRobotDataGenerator
@@ -131,7 +131,7 @@ start_training_time = time.time()
 [Lowest_loss, Models_loss_list, Best_Model, Lowest_loss_index, Running_Losses_Array, Lgx_Array, Lgu_Array, L3_Array, L4_Array, L5_Array, L6_Array] = trainingfcn(eps_final, check_epoch, lr, batch_size, S_p, T, alpha, Num_meas, Num_inputs, Num_x_Obsv, Num_x_Neurons, Num_u_Obsv, Num_u_Neurons, Num_hidden_x, Num_hidden_x, Num_hidden_u, Num_hidden_u, train_tensor, test_tensor, M, device=None)
 
 # Load the parameters of the best model
-model.load_state_dict(torch.load(Best_Model))
+load_model(model, Best_Model, device)
 print(f"Loaded model parameters from Model: {Best_Model}")
 
 end_time = time.time()
