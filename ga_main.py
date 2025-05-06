@@ -93,7 +93,7 @@ elif system == 'two_link':
         Num_u_Neurons = 128
         Num_hidden_x  = 3
         Num_hidden_u  = 3
-        alpha         = [0.001, 1e-5, 1e-14]
+        alpha         = [0.656327, 5.2324e-6, 5.7252e-13]
 
 
 # ---- Define last training param -------
