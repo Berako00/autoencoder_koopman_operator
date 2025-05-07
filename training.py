@@ -129,3 +129,66 @@ def trainingfcn(eps, check_epoch, lr, batch_size, S_p, T, dt, alpha, Num_meas, N
   Best_Model = Model_path[Lowest_loss_index]
 
   return (Lowest_loss,Models_loss_list, Best_Model, Lowest_loss_index, Running_Losses_Array, Lgx_Array, Lgu_Array, L3_Array, L4_Array, L5_Array, L6_Array)
+
+
+
+def trainingfcn_ga(eps, check_epoch, lr, batch_size, S_p, T, dt, alpha, Num_meas, Num_inputs, Num_x_Obsv, Num_x_Neurons, Num_u_Obsv, Num_u_Neurons, Num_hidden_x_encoder, Num_hidden_x_decoder, Num_hidden_u_encoder, Num_hidden_u_decoder, train_tensor, test_tensor, M, device=None):
+
+  if device is None:
+      device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+  pin_memory = True if device.type == "cuda" else False
+
+  train_dataset = TensorDataset(train_tensor)
+  train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, pin_memory=pin_memory)
+  test_dataset = TensorDataset(test_tensor)
+  test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False, pin_memory=pin_memory)
+
+  Models_loss_list = torch.zeros(M)
+  c_m = 0
+  
+  Model_path = [get_model_path(i) for i in range(M)]
+  
+  for c_m in range(M):
+      model_path_i = Model_path[c_m]
+      model = AUTOENCODER(Num_meas, Num_inputs, Num_x_Obsv,
+                          Num_x_Neurons, Num_u_Obsv, Num_u_Neurons,
+                          Num_hidden_x_encoder, Num_hidden_x_decoder,
+                          Num_hidden_u_encoder, Num_hidden_u_decoder).to(device)
+      optimizer = optim.Adam(model.parameters(), lr=lr)
+      best_test_loss_checkpoint = float('inf')
+
+      for e in range(eps):
+          model.train()
+
+          for (batch_x,) in train_loader:
+              batch_x = batch_x.to(device, non_blocking=True)
+              optimizer.zero_grad()
+              [loss, L_gx, L_gu, L_3, L_4, L_5, L_6] = total_loss(alpha, batch_x, Num_meas, Num_x_Obsv, T, S_p, model)
+              loss.backward()
+              optimizer.step()
+              torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=2.0)
+
+          # Every 20 epochs, evaluate on the test set and checkpoint if improved.
+          if (e + 1) % check_epoch == 0:
+              model.eval()
+              test_running_loss = 0.0
+              for (batch_x,) in test_loader:
+                  batch_x = batch_x.to(device, non_blocking=True)
+                  _, loss = enc_self_feeding(model, batch_x, Num_meas)
+                  test_running_loss += loss.item()
+
+              # If test loss is lower than the one from the previous checkpoint, save the model.
+              if test_running_loss < best_test_loss_checkpoint:
+                  best_test_loss_checkpoint = test_running_loss
+
+      Models_loss_list[c_m] = best_test_loss_checkpoint
+
+  # Find the best of the models
+  Lowest_loss = Models_loss_list.min().item()
+
+  Lowest_loss_index = int((Models_loss_list == Models_loss_list.min()).nonzero(as_tuple=False)[0].item())
+
+  Best_Model = Model_path[Lowest_loss_index]
+
+  return (Lowest_loss, Models_loss_list, Best_Model, Lowest_loss_index)
