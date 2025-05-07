@@ -3,15 +3,17 @@ import copy
 import torch
 from training import trainingfcn, trainingfcn_mixed
 
-def evaluate_candidate(check_epoch, candidate, train_tensor, test_tensor, eps, lr, batch_size, S_p, T, dt, M):
+def evaluate_candidate(check_epoch, candidate, train_tensor, test_tensor, eps, lr, batch_size, S_p, T, dt, M, device):
     """
     Evaluates a candidate by running a shortened training using fewer epochs
     and returns the test loss.
     """
     alpha = [candidate['alpha0'], candidate['alpha1'], candidate['alpha2']]
     try:
-        results = trainingfcn(eps, check_epoch, lr, batch_size, S_p, T, dt, alpha, candidate['Num_meas'], candidate['Num_inputs'], candidate['Num_x_Obsv'], candidate['Num_x_Neurons'], candidate['Num_u_Obsv'], candidate['Num_u_Neurons'],
-                                candidate['Num_hidden_x'], candidate['Num_hidden_x'], candidate['Num_hidden_u'], candidate['Num_hidden_u'], train_tensor, test_tensor, M)
+        # pin this process to the right GPU
+        torch.cuda.set_device(device)
+        results = trainingfcn_ga(eps, check_epoch, lr, batch_size, S_p, T, dt, alpha, candidate['Num_meas'], candidate['Num_inputs'], candidate['Num_x_Obsv'], candidate['Num_x_Neurons'], candidate['Num_u_Obsv'], candidate['Num_u_Neurons'],
+                                candidate['Num_hidden_x'], candidate['Num_hidden_x'], candidate['Num_hidden_u'], candidate['Num_hidden_u'], train_tensor, test_tensor, M, device=torch.device(f'cuda:{device}'))
 
         # Use only the lowest_loss (first element) for fitness evaluation
         lowest_loss = results[0]
@@ -36,9 +38,9 @@ def initialize_population(pop_size, param_ranges, Num_meas, Num_inputs):
             "Num_u_Neurons": random.randint(*param_ranges["Num_u_Neurons"]),
             "Num_hidden_x": random.randint(*param_ranges["Num_hidden_x"]),  # Shared x hidden layers
             "Num_hidden_u": random.randint(*param_ranges["Num_hidden_u"]),  # Shared u hidden layers
-            "alpha0": random.uniform(*param_ranges["alpha0"]),
-            "alpha1": random.uniform(*param_ranges["alpha1"]),
-            "alpha2": random.uniform(*param_ranges["alpha2"])
+            "alpha0": random.choice([0.1,  0.1]),
+            "alpha1": random.choice([1e-9, 1e-8, 1e-7, 1e-6, 1e-5]),
+            "alpha2": random.choice([1e-18, 1e-17, 1e-16, 1e-15, 1e-14, 1e-13, 1e-12])
         }
         population.append(candidate)
     return population
