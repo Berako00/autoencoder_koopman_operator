@@ -38,7 +38,7 @@ def initialize_population(pop_size, param_ranges, Num_meas, Num_inputs):
             "Num_u_Neurons": random.randint(*param_ranges["Num_u_Neurons"]),
             "Num_hidden_x": random.randint(*param_ranges["Num_hidden_x"]),  # Shared x hidden layers
             "Num_hidden_u": random.randint(*param_ranges["Num_hidden_u"]),  # Shared u hidden layers
-            "alpha0": random.choice([0.1,  0.1]),
+            "alpha0": random.choice([0.1, 0.01, 0.001]),
             "alpha1": random.choice([1e-9, 1e-8, 1e-7, 1e-6, 1e-5]),
             "alpha2": random.choice([1e-18, 1e-17, 1e-16, 1e-15, 1e-14, 1e-13, 1e-12])
         }
@@ -83,13 +83,13 @@ def mutate(candidate, param_ranges, mutation_rate=0.1):
     if random.random() < mutation_rate:
         candidate['Num_hidden_u'] = max(param_ranges["Num_hidden_u"][0], min(param_ranges["Num_hidden_u"][1], candidate['Num_hidden_u'] + random.choice([-1, 1])))
     if random.random() < mutation_rate:
-        new_alpha0 = candidate['alpha0'] * (10 ** random.gauss(0, 0.1))
+        new_alpha0 = candidate['alpha0'] * (10 ** random.choice([-1, 1]))
         candidate['alpha0'] = max(param_ranges["alpha0"][0], min(param_ranges["alpha0"][1], new_alpha0))
     if random.random() < mutation_rate:
-        new_alpha1 = candidate['alpha1'] * (10 ** random.gauss(0, 0.1))
+        new_alpha1 = candidate['alpha1'] * (10 ** random.choice([-2, -1, 1, 2]))
         candidate['alpha1'] = max(param_ranges["alpha1"][0], min(param_ranges["alpha1"][1], new_alpha1))
     if random.random() < mutation_rate:
-        new_alpha2 = candidate['alpha2'] * (10 ** random.gauss(0, 0.1))
+        new_alpha2 = candidate['alpha2'] * (10 ** random.choice([-3, -2, -1, 1, 2, 3]))
         candidate['alpha2'] = max(param_ranges["alpha2"][0], min(param_ranges["alpha2"][1], new_alpha2))
     return candidate
 
@@ -110,38 +110,51 @@ def run_genetic_algorithm(check_epoch, Num_meas, Num_inputs, train_tensor, test_
     if param_ranges is None:
         raise ValueError("Parameter ranges must be provided.")
 
-    T = train_tensor.shape[1]  # Assuming shape: (num_samples, T, features)
     population = initialize_population(pop_size, param_ranges, Num_meas, Num_inputs)
 
     best_candidate = None
     best_fitness = -float('inf')  # Fitness = -loss, so higher fitness is better
 
 
+    # get all GPU indices
+    gpu_count = torch.cuda.device_count()
+    if gpu_count == 0:
+        raise RuntimeError("No GPUs found!")
+    devices = list(range(gpu_count))
+    
+    ctx = get_context("spawn")
     for gen in range(generations):
-        # For generations after the first, store the best candidate from the previous generation
-        if gen > 0:
-            prev_best_candidate = best_candidate
-            prev_best_fitness = best_fitness
+        triplets = []
+        with concurrent.futures.ProcessPoolExecutor(
+                max_workers=len(devices),
+                mp_context=ctx
+        ) as execr:
+            # submit each candidate with its assigned device
+            for idx, candidate in enumerate(population):
+                dev = devices[idx % len(devices)]
+                fut = execr.submit(
+                    evaluate_candidate,
+                    check_epoch, candidate, train_tensor, test_tensor,
+                    eps, lr, batch_size, S_p, T, dt, M, dev
+                )
+                triplets.append((fut, candidate, dev))
 
-        print(f"Generation {gen+1}/{generations}")
-        fitnesses = []
-        # Evaluate fitness for each candidate
-        for candidate in population:
-           # Skip evaluation if candidate is the best from the previous generation
-            if gen > 0 and candidate == prev_best_candidate:
-                fitness = prev_best_fitness
-                loss = -fitness  # Since fitness = -loss
-                print(f"Candidate (best from previous generation): {candidate} | Loss: {loss} (evaluation skipped)")
+            # wait for them all to finish (barrier)
+            concurrent.futures.wait(
+                [t[0] for t in triplets],
+                return_when=concurrent.futures.ALL_COMPLETED
+            )
 
-            else:
-              loss = evaluate_candidate(check_epoch, candidate, train_tensor, test_tensor, eps, lr, batch_size, S_p, T, dt, M)
-              fitness = -loss  # Lower loss => higher fitness
-              print(f"Candidate: {candidate} | Loss: {loss}")
-
-            fitnesses.append(fitness)
-            if fitness > best_fitness:
-                best_fitness = fitness
-                best_candidate = candidate
+            # collect losses
+            fitnesses = []
+            for fut, cand, dev in triplets:
+                loss = fut.result()  # now guaranteed no CUDA errors
+                fitness = -loss
+                print(f"[GPU {dev}] Candidate: {cand} | Loss: {loss}")
+                fitnesses.append(fitness)
+                if fitness > best_fitness:
+                    best_fitness = fitness
+                    best_candidate = cand
 
         # Sort population by fitness (highest first)
         sorted_population = [cand for cand, fit in sorted(zip(population, fitnesses), key=lambda x: x[1], reverse=True)]
