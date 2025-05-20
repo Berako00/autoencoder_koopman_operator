@@ -33,6 +33,9 @@ seed = 1
 
 # ---- GA Params -------------
 use_ga = False
+if use_ga and device == "cpu":
+    print('No GPU detected, GA skipped.')
+
 generations = 6
 pop_size = 10
 eps = 500
