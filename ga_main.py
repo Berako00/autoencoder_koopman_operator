@@ -38,6 +38,10 @@ def main():
     
     # ---- GA Params -------------
     use_ga = True
+    if use_ga and device=="cpu":
+        use_ga = False
+        print("No GPU available, Genetic algorithm skipped")
+    
     generations = 20
     pop_size = 21
     eps = 500
