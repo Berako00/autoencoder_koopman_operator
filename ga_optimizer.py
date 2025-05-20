@@ -1,7 +1,10 @@
 import random
 import copy
 import torch
-from training import trainingfcn, trainingfcn_mixed
+from training import trainingfcn, trainingfcn_ga
+import concurrent.futures
+import json
+from multiprocessing import get_context
 
 def evaluate_candidate(check_epoch, candidate, train_tensor, test_tensor, eps, lr, batch_size, S_p, T, dt, M, device):
     """
@@ -12,8 +15,7 @@ def evaluate_candidate(check_epoch, candidate, train_tensor, test_tensor, eps, l
     try:
         # pin this process to the right GPU
         torch.cuda.set_device(device)
-        results = trainingfcn_ga(eps, check_epoch, lr, batch_size, S_p, T, dt, alpha, candidate['Num_meas'], candidate['Num_inputs'], candidate['Num_x_Obsv'], candidate['Num_x_Neurons'], candidate['Num_u_Obsv'], candidate['Num_u_Neurons'],
-                                candidate['Num_hidden_x'], candidate['Num_hidden_x'], candidate['Num_hidden_u'], candidate['Num_hidden_u'], train_tensor, test_tensor, M, device=torch.device(f'cuda:{device}'))
+        results = trainingfcn_ga(eps, check_epoch, lr, batch_size, S_p, T, dt, alpha, candidate['Num_meas'], candidate['Num_inputs'], candidate['Num_x_Obsv'], candidate['Num_x_Neurons'], candidate['Num_u_Obsv'], candidate['Num_u_Neurons'], candidate['Num_hidden_x'], candidate['Num_hidden_x'], candidate['Num_hidden_u'], candidate['Num_hidden_u'], train_tensor, test_tensor, M, device=torch.device(f'cuda:{device}'))
 
         # Use only the lowest_loss (first element) for fitness evaluation
         lowest_loss = results[0]
